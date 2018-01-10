@@ -3,6 +3,9 @@ require 'json'
 require 'digest/sha2'
 
 class BlockChain
+  attr_reader :chain
+  attr_reader :current_transactions
+
   def initialize
       @chain = []
       @current_transactions = []
@@ -22,13 +25,13 @@ class BlockChain
       timestamp: Time.now.to_i,
       transactions: @current_transactions,
       proof: proof,
-      previous_hash: previous_hash || hash(chain.last),
+      previous_hash: previous_hash || hash(chain.last)
     }
 
     # Reset the current list of transactions
     @current_transactions.clear
 
-    chain << block
+    @chain << block
     return block
   end
 
@@ -43,7 +46,7 @@ class BlockChain
     @current_transactions << {
       sender: sender,
       recipient: recipient,
-      amount: amount,
+      amount: amount
     }
 
     return @current_transactions.last_block[:index] + 1
@@ -57,7 +60,9 @@ class BlockChain
      #  :return: <int>
 
     proof = 0
-    while !valid_proof(last_proof, proof) { proof += 1}
+    while !valid_proof(last_proof, proof) 
+      proof += 1
+    end
 
     return proof
   end
