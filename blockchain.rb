@@ -1,22 +1,71 @@
+require 'time'
+require 'json'
+require 'digest/sha2'
+
 class BlockChain
   def initialize
       @chain = []
       @current_transactions = []
+
+      new_block(100, 1)
   end
 
-  def new_block
-    # Creates a new block and adds it to the chain
+  def new_block(proof, previous_hash=nil)
+=begin
+    Create a new Block in the Blockchain
+    :param proof: <int> The proof given by the Proof of Work algorithm
+    :param previous_hash: (Optional) <str> Hash of previous Block
+    :return: <dict> New Block
+=end
+
+    block = {
+      index: @chain.length + 1,
+      timestamp: Time.now.to_i,
+      transactions: @current_transactions,
+      proof: proof,
+      previous_hash: previous_hash || hash(chain.last),
+    }
+
+    # Reset the current list of transactions
+    @current_transactions.clear
+
+    chain << block
+    return block
   end
 
-  def new_transaction
-    # Creates a new transaction to the list of transactions
+  def new_transaction(sender, recipient, amount)
+=begin
+    Creates a new transaction to go into the next mined Block
+      
+    :param sender: <str> Address of the Sender
+    :param recipient: <str> Address of the Recipient
+    :param amount: <int> Amount
+    :return: <int> The index of the Block that will hold this transaction
+=end
+
+    @current_transactions << {
+      sender: sender,
+      recipient: recipient,
+      amount: amount,
+    }
+
+    return @current_transactions.last_block[:index] + 1
   end
 
   def last_block
     # return last_block
+    return @chain.last
   end
 
   def self.hash(block)
-    # Hahses a Block
+=begin
+    Creates a SHA-256 hash of a Block
+    :param block: <dict> Block
+    :return: <str>
+=end
+
+    # We must make sure that the Dictionary is ordered, or we'll have inconsistent hashes
+    block_string = JSON.generate(@chain.map(&:sort))
+    return Digest::SHA256.hexdigest(block_string)
   end
 end
