@@ -1,19 +1,33 @@
 require 'bundler/setup'
+require 'json'
 require 'sinatra'
 require 'sinatra/reloader'
+require 'sinatra/json'
 require 'securerandom'
-require 'json'
 require './blockchain'
 
 node_identifier = SecureRandom.uuid.gsub("-","")
 blockchain = BlockChain.new
 
 get '/mine' do
-  "We'll mine a new Block."
+  
 end
 
 post '/transactions/new' do
-  "We'll add a new transaction."
+  request.body.rewind
+  values = JSON.parse request.body.read
+
+  # Check that the required fields are in the POST'ed data
+  required = ['sender', 'recepient', 'amount']
+  unless required.all? {|field| values.keys.include?(field)}
+    halt 400, 'Missing Values'
+  end
+
+  # Create a new transaction
+  index = blockchain.new_transaction(values['sender'], values['recepient'], values['amount'])
+
+  status 201
+  body json {message: "Transaction will be added to Block #{index}"}
 end
 
 get '/chain' do
@@ -22,5 +36,5 @@ get '/chain' do
     length: blockchain.chain.length,
   }
 
-  response.to_json
+  json response
 end
