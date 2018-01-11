@@ -25,7 +25,7 @@ class BlockChain
       timestamp: Time.now.to_i,
       transactions: @current_transactions,
       proof: proof,
-      previous_hash: previous_hash || hash(chain.last)
+      previous_hash: previous_hash || self.class.hash(chain.last)
     }
 
     # Reset the current list of transactions
@@ -49,7 +49,7 @@ class BlockChain
       amount: amount
     }
 
-    return @current_transactions.last_block[:index] + 1
+    return last_block[:index] + 1
   end
 
   def proof_of_work(last_proof)
@@ -60,7 +60,7 @@ class BlockChain
      #  :return: <int>
 
     proof = 0
-    while !valid_proof(last_proof, proof) 
+    while !self.class.valid_proof(last_proof, proof) 
       proof += 1
     end
 
@@ -78,7 +78,7 @@ class BlockChain
     # :return: <str>
 
     # We must make sure that the Dictionary is ordered, or we'll have inconsistent hashes
-    block_string = JSON.generate(@chain.map(&:sort))
+    block_string = JSON.generate(block.sort)
     return Digest::SHA256.hexdigest(block_string)
   end
 
