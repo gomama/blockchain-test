@@ -45,7 +45,7 @@ post '/transactions/new' do
   end
 
   # Create a new transaction
-  index = blockchain.new_transaction(values['sender'], values['recepient'], values['amount'])
+  index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
 
   status 201
   body json({message: "Transaction will be added to Block #{index}"})

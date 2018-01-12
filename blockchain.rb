@@ -1,16 +1,29 @@
 require 'time'
 require 'json'
 require 'digest/sha2'
+require 'uri'
 
 class BlockChain
   attr_reader :chain
   attr_reader :current_transactions
+  attr_reader :nodes
 
   def initialize
       @chain = []
       @current_transactions = []
+      @nodes = []
 
       new_block(100, 1)
+  end
+
+  def register_node(address)
+    # Add a new list of nodes
+    #
+    # :param address: <str> Address of node. Eg. 'http://192.168.0.5:5000'
+    # :return: None
+
+    parsed_url = URI.parse(address)
+    @nodes << parsed_url.host if !@nodes.include?(parsed_url.host)
   end
 
   def new_block(proof, previous_hash=nil)
@@ -22,8 +35,8 @@ class BlockChain
 
     block = {
       index: @chain.length + 1,
-      timestamp: Time.now.to_i,
-      transactions: @current_transactions,
+      timestamp: Time.now.to_f,
+      transactions: @current_transactions.dup,
       proof: proof,
       previous_hash: previous_hash || self.class.hash(chain.last)
     }
