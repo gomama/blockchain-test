@@ -59,3 +59,35 @@ get '/chain' do
 
   json response
 end
+
+post '/nodes/register' do
+  request.body.rewind
+  values = JSON.parse(request.body.read)
+
+  nodes = values['nodes']
+  if nodes.nil?
+    halt 400, 'Error: Please supply a valid list of nodes'
+  end
+
+  nodes.each do |node|
+    blockchain.register_node(node)
+  end
+
+  response = {
+    message: "New nodes have been added.",
+    total_nodes: blockchain.nodes
+  }
+  
+  json response
+end
+
+get '/nodes/resolve' do
+  replaced = blockchain.resolve_conflicts()
+
+  response = {
+    message: replaced ? "Our chain was replaced" : "Our chain is authoritative",
+    new_chain: blockchain.chain
+  }
+
+  json response
+end

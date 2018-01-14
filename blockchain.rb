@@ -1,6 +1,7 @@
 require 'time'
 require 'json'
 require 'digest/sha2'
+require 'net/http'
 require 'uri'
 
 class BlockChain
@@ -23,7 +24,8 @@ class BlockChain
     # :return: None
 
     parsed_url = URI.parse(address)
-    @nodes << parsed_url.host if !@nodes.include?(parsed_url.host)
+    host = "#{parsed_url.host}:#{parsed_url.port}"
+    @nodes << host if !@nodes.include?(host)
   end
 
   def new_block(proof, previous_hash=nil)
@@ -78,6 +80,74 @@ class BlockChain
     end
 
     return proof
+  end
+
+  def valid_chain(chain)
+    # Determine if a given blockchain is valid
+    # 
+    # :param chain: <list> A blockchain
+    # :return <bool> True if valid, False if not
+
+    last_block = chain.first
+    current_index = 1
+
+    while current_index < chain.length
+      block = chain[current_index]
+      puts last_block
+      puts block
+      puts "\n----------------"
+
+      # Check that the hash of the block is correct
+      if block['previous_hash'] != self.class.hash(last_block)
+        return false
+      end
+
+      unless self.class.valid_proof(last_block['proof'], block['proof'])
+        return false
+      end
+
+      last_block = block
+      current_index += 1
+    end
+
+    return true
+  end
+
+  def resolve_conflicts
+    # This is our Consensus Alogorithm, it resolves conflicts
+    # by replacing our chain with longest one in the network.
+    #
+    # return: <bool> True if our chain was replaced, False is not
+
+    neighbors = @nodes
+    new_chain = nil
+
+    # We're only looking for the chains longer then ones
+    max_length = @chain.length
+
+    # Grab and verify the chains from all the nodes in our network
+    neighbors.each do |node|
+      response = Net::HTTP.get_response(URI.parse("http://#{node}/chain"))
+
+      if response.is_a? Net::HTTPOK
+        params = JSON.parse(response.body)
+        length = params['length']
+        chain = params['chain']
+
+        # Check if the length is longer and the chain is valid
+        if length > max_length && valid_chain(chain)
+          max_length = length
+          new_chain = chain
+        end
+      end
+    end
+
+    unless new_chain.nil?
+      @chain = new_chain
+      return true
+    end
+
+    return false
   end
 
   def last_block
